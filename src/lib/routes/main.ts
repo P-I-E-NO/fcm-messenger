@@ -28,7 +28,7 @@ router.post(
 
 		const user = await connection!.query<{ token: string }>(
 			`select token from fcm_tokens where user_id = $1`,
-			[ notification_claims?.owner ]
+			[ notification_claims?.data.owner ]
 		)
 
 		if(user.rowCount === 0){
@@ -43,10 +43,10 @@ router.post(
 				{
 					token: t['token'].toString(),
 					data: {
-						car_name: notification_claims!.car_name,
-						owner: notification_claims!.owner,
-						tank_size: notification_claims!.tank_size.toString(),
-						consumption: notification_claims!.consumption.toString(),
+						car_name: notification_claims!.data.car_name,
+						owner: notification_claims!.data.owner,
+						tank_size: notification_claims!.data.tank_size.toString(),
+						consumption: notification_claims!.data.consumption.toString(),
 					}
 				},
 			)
