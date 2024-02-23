@@ -1,0 +1,44 @@
+FROM node:21-alpine3.17 as builder
+
+ENV PYTHONUNBUFFERED=1
+RUN apk add python3 && ln -sf python3 /usr/bin/python
+RUN python3 -m ensurepip
+RUN pip3 install pip setuptools
+RUN apk add gcc g++ make
+RUN apk add coreutils
+
+RUN npm i -g typescript@latest
+
+WORKDIR /code
+
+COPY . .
+COPY package.json /code
+COPY wait-for /code
+COPY tsconfig.json /code
+RUN rm -rf /code/tests
+
+RUN chmod +x ./wait-for
+RUN npm ci
+RUN tsc
+
+FROM node:21-alpine3.17 as squasher
+
+WORKDIR /code
+COPY --from=builder /code/ /code
+RUN wget -O - https://gobinaries.com/tj/node-prune | sh
+RUN npm prune --omit=dev
+RUN node-prune
+
+FROM node:21-alpine3.17 as exec
+
+RUN addgroup piffo && adduser -D -S -G piffo piffo
+RUN apk add coreutils
+USER piffo 
+
+WORKDIR /code
+COPY --from=squasher --chown=piffo:piffo /code/build /code
+COPY --from=squasher --chown=piffo:piffo /code/package.json /code/package.json
+COPY --from=squasher --chown=piffo:piffo /code/node_modules /code/node_modules
+COPY --chown=piffo:piffo wait-for .
+
+ENTRYPOINT ["npm", "run", "app:prod"] 

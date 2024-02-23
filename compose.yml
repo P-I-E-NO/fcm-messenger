@@ -1,0 +1,38 @@
+version: "3.9"
+networks:
+  fcm-net:
+    name: fcm-net
+
+services:
+  fcm_messenger:
+    depends_on:
+      - postgres_db
+    container_name: postgres_db
+    build:
+      context: .
+    environment:
+      - DB_CONNECTION_STRING=postgresql://dockerissimo_rust:pass@postgres_db:5432/fantastic_db
+      - SERVICE_ACCOUNT_PATH=/code/firebase/pieno-app-firebase-adminsdk-v437b-0e77967c6f.json
+      - JWT_KEY=Poggaceo
+    ports:
+      - "5151:5050"
+    volumes:
+      - ./src:/code/src
+      - ./cloud-migrations:/code/migrations
+      - ./package.json:/code/package.json
+      - ./tsconfig.json:/code/tsconfig.json
+      - ./firebase:/code/firebase
+    #  - ./node_modules:/code/node_modules
+      - ./babel.config.js:/code/babel.config.js
+    restart: unless-stopped
+    networks:
+      - fcm-net
+
+  postgres_db:
+    image: postgres:16.1
+    networks:
+      - fcm-net
+    environment:
+      - POSTGRES_USER=dockerissimo_rust
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=fantastic_db

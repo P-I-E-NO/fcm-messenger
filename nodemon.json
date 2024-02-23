@@ -1,0 +1,6 @@
+{
+    "watch": ["**/*.ts"],
+    "ignore": ["build", "src/tests"],
+    "exec": "tsc --sourcemap && node --inspect=0.0.0.0:9929 --nolazy build/main.js",
+    "ext": "ts"
+}
