@@ -7,7 +7,6 @@ services:
   fcm_messenger:
     depends_on:
       - postgres_db
-    container_name: postgres_db
     build:
       context: .
     environment:
@@ -15,7 +14,7 @@ services:
       - SERVICE_ACCOUNT_PATH=/code/firebase/pieno-app-firebase-adminsdk-v437b-0e77967c6f.json
       - JWT_KEY=Poggaceo
     ports:
-      - "5151:5050"
+      - "3004:5050"
     volumes:
       - ./src:/code/src
       - ./cloud-migrations:/code/migrations
@@ -36,3 +35,19 @@ services:
       - POSTGRES_USER=dockerissimo_rust
       - POSTGRES_PASSWORD=pass
       - POSTGRES_DB=fantastic_db
+
+  rust-users:
+    image: test-users
+    depends_on:
+      - postgres_db
+    networks:
+      - fcm-net
+    environment:
+      - CONN_URI=postgresql://dockerissimo_rust:pass@postgres_db:5432/fantastic_db
+      - RUST_LOG=trace
+      - JWT_SECRET=Poggaceo
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/code/src
+    # entrypoint: ["cargo", "watch", "-x", "run"]

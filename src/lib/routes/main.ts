@@ -29,7 +29,7 @@ router.post(
 		const user = await connection!.query<{ token: string }>(
 			`select token from fcm_tokens where user_id = $1`,
 			[ notification_claims?.data.owner ]
-		)
+		);
 
 		if(user.rowCount === 0){
 			return ctx.body = {
