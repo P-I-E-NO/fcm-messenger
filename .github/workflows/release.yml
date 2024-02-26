@@ -1,0 +1,12 @@
+name: build image on release
+
+on:
+  push:
+    tags: 
+      - v*
+
+jobs:
+  push-build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -X POST https://hooks.macca.cloud/pieno/build/fcm?tag=${{ github.ref_name }}
