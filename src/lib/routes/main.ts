@@ -42,6 +42,10 @@ router.post(
 			admin.messaging().send(
 				{
 					token: t['token'].toString(),
+					notification: {
+						title: `${notification_claims?.data.car_name} è in riserva!`,
+						body: "Clicca per visualizzare il distributore migliore"
+					},
 					data: {
 						car_name: notification_claims!.data.car_name,
 						owner: notification_claims!.data.owner,
