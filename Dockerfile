@@ -20,7 +20,6 @@ USER auth_user
 
 RUN mkdir node_modules
 COPY --chown=auth_user:auth_grp ./src /code/src
-COPY --chown=auth_user:auth_grp ./tests /code/tests
 COPY --chown=auth_user:auth_grp jest.config.js .
 COPY --chown=auth_user:auth_grp package.json .
 COPY --chown=auth_user:auth_grp wait-for .

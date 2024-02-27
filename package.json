@@ -34,6 +34,7 @@
     "koa-bodyparser": "^4.3.0",
     "koa-helmet": "^6.1.0",
     "koa-mount": "^4.0.0",
+    "nanoid": "^3.3.7",
     "pg": "^8.10.0",
     "safe-regex": "^2.1.1",
     "supertest": "^6.2.4"

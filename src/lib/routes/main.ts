@@ -1,10 +1,10 @@
 import Router from "@koa/router";
 import State from "../types/state";
 import { checkAuth } from "../middlewares/check-auth";
-import { post } from "../middlewares/post";
 import { NotifyUserRequest } from "../types/dto/notify-user-request";
 import { withConnection } from "../middlewares/with-connection";
 import admin from "firebase-admin";
+import { nanoid } from "nanoid";
 
 const router = new Router<State>();
 
@@ -18,7 +18,7 @@ router.get("/", async (ctx) => {
 router.post(
 	'/notify',
 	checkAuth(),
-	withConnection(),
+	withConnection(true),
 	async (ctx: NotifyUserRequest) => {
 
 		const {
@@ -28,17 +28,17 @@ router.post(
 
 		const user = await connection!.query<{ token: string }>(
 			`select token from fcm_tokens where user_id = $1`,
-			[ notification_claims?.data.owner ]
+			[notification_claims?.data.owner]
 		);
 
-		if(user.rowCount === 0){
+		if (user.rowCount === 0) {
 			return ctx.body = {
 				success: true,
 				message: "no_token_found"
 			} // we fail "happily"
 		}
 
-		const tokens = user.rows.map(t => 
+		const tokens = user.rows.map(t =>
 			admin.messaging().send(
 				{
 					token: t['token'].toString(),
@@ -57,6 +57,19 @@ router.post(
 		);
 
 		await Promise.all(tokens);
+		const notification_id = nanoid(32);
+		await connection!.query(`
+				insert into notifications values ($1, $2, $3)
+		`, [
+			notification_id,
+			notification_claims!.data.owner,
+			{
+				car_name: notification_claims!.data.car_name,
+				owner: notification_claims!.data.owner,
+				tank_size: notification_claims!.data.tank_size.toString(),
+				consumption: notification_claims!.data.consumption.toString(),
+			}
+		])
 
 		return ctx.body = {
 			success: true,
