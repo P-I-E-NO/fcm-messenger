@@ -33,6 +33,9 @@ FROM node:21-alpine3.17 as exec
 
 RUN addgroup piffo && adduser -D -S -G piffo piffo
 RUN apk add coreutils
+RUN mkdir -p /code
+RUN chown -R piffo:piffo /code
+
 USER piffo 
 
 WORKDIR /code
