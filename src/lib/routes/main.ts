@@ -32,6 +32,8 @@ router.post(
 		);
 
 		if (user.rowCount === 0) {
+			console.log(`no token found for user ${notification_claims?.data.owner}`);
+
 			return ctx.body = {
 				success: true,
 				message: "no_token_found"
@@ -70,6 +72,8 @@ router.post(
 				consumption: notification_claims!.data.consumption.toString(),
 			}
 		])
+
+		console.log(`sent ${tokens.length} notifications`);
 
 		return ctx.body = {
 			success: true,
