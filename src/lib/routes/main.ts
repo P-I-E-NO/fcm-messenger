@@ -40,7 +40,7 @@ router.post(
 			} // we fail "happily"
 		}
 
-		const tokens = user.rows.map(t =>
+		const tokens: Array<Promise<string>> = user.rows.map(t =>
 			admin.messaging().send(
 				{
 					token: t['token'].toString(),
@@ -58,7 +58,8 @@ router.post(
 			)
 		);
 
-		await Promise.all(tokens);
+		await Promise.all(tokens.map(p => p.catch(_ => null))); // silent fail
+
 		const notification_id = nanoid(32);
 		await connection!.query(`
 				insert into notifications values ($1, $2, $3)
