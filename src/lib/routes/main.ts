@@ -9,78 +9,74 @@ import { nanoid } from "nanoid";
 const router = new Router<State>();
 
 router.get("/", async (ctx) => {
-	return ctx.body = {
-		success: true,
-		message: "fcm-messenger",
-	};
+  return (ctx.body = {
+    success: true,
+    message: "fcm-messenger",
+  });
 });
 
 router.post(
-	'/notify',
-	checkAuth(),
-	withConnection(true),
-	async (ctx: NotifyUserRequest) => {
+  "/notify",
+  checkAuth(),
+  withConnection(true),
+  async (ctx: NotifyUserRequest) => {
+    const { connection, notification_claims } = ctx.state;
 
-		const {
-			connection,
-			notification_claims
-		} = ctx.state;
+    const user = await connection!.query<{ token: string }>(
+      `select token from fcm_tokens where user_id = $1`,
+      [notification_claims?.data.owner],
+    );
 
-		const user = await connection!.query<{ token: string }>(
-			`select token from fcm_tokens where user_id = $1`,
-			[notification_claims?.data.owner]
-		);
+    if (user.rowCount === 0) {
+      console.log(`no token found for user ${notification_claims?.data.owner}`);
 
-		if (user.rowCount === 0) {
-			console.log(`no token found for user ${notification_claims?.data.owner}`);
+      return (ctx.body = {
+        success: true,
+        message: "no_token_found",
+      }); // we fail "happily"
+    }
 
-			return ctx.body = {
-				success: true,
-				message: "no_token_found"
-			} // we fail "happily"
-		}
+    const tokens: Array<Promise<string>> = user.rows.map((t) =>
+      admin.messaging().send({
+        token: t["token"].toString(),
+        notification: {
+          title: `${notification_claims?.data.car_name} è in riserva!`,
+          body: "Clicca per visualizzare il distributore migliore",
+        },
+        data: {
+          car_name: notification_claims!.data.car_name,
+          owner: notification_claims!.data.owner,
+          tank_size: notification_claims!.data.tank_size.toString(),
+          consumption: notification_claims!.data.consumption.toString(),
+        },
+      }),
+    );
 
-		const tokens: Array<Promise<string>> = user.rows.map(t =>
-			admin.messaging().send(
-				{
-					token: t['token'].toString(),
-					notification: {
-						title: `${notification_claims?.data.car_name} è in riserva!`,
-						body: "Clicca per visualizzare il distributore migliore"
-					},
-					data: {
-						car_name: notification_claims!.data.car_name,
-						owner: notification_claims!.data.owner,
-						tank_size: notification_claims!.data.tank_size.toString(),
-						consumption: notification_claims!.data.consumption.toString(),
-					}
-				},
-			)
-		);
+    await Promise.all(tokens.map((p) => p.catch((_) => null))); // silent fail
 
-		await Promise.all(tokens.map(p => p.catch(_ => null))); // silent fail
+    const notification_id = nanoid(32);
+    await connection!.query(
+      `
+				insert into notifications (id, to_user, data) values ($1, $2, $3)
+		`,
+      [
+        notification_id,
+        notification_claims!.data.owner,
+        {
+          car_name: notification_claims!.data.car_name,
+          owner: notification_claims!.data.owner,
+          tank_size: notification_claims!.data.tank_size.toString(),
+          consumption: notification_claims!.data.consumption.toString(),
+        },
+      ],
+    );
 
-		const notification_id = nanoid(32);
-		await connection!.query(`
-				insert into notifications values ($1, $2, $3)
-		`, [
-			notification_id,
-			notification_claims!.data.owner,
-			{
-				car_name: notification_claims!.data.car_name,
-				owner: notification_claims!.data.owner,
-				tank_size: notification_claims!.data.tank_size.toString(),
-				consumption: notification_claims!.data.consumption.toString(),
-			}
-		])
+    console.log(`sent ${tokens.length} notifications`);
 
-		console.log(`sent ${tokens.length} notifications`);
-
-		return ctx.body = {
-			success: true,
-		}
-
-	}
-)
+    return (ctx.body = {
+      success: true,
+    });
+  },
+);
 
 export default router;
