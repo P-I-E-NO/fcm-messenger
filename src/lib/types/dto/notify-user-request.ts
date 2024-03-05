@@ -1,8 +1,7 @@
 import { CustomContext } from "./custom-request"
 
 interface NotifyUserRequestBody {
-    user_id: string,
-    car_name: string
+    fuel_value: string
 }
 
 export type NotifyUserRequest = CustomContext<NotifyUserRequestBody>;

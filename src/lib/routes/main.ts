@@ -21,11 +21,14 @@ router.post(
   withConnection(true),
   async (ctx: NotifyUserRequest) => {
     const { connection, notification_claims } = ctx.state;
+    const { fuel_value } = ctx.request.body;
 
     const user = await connection!.query<{ token: string }>(
       `select token from fcm_tokens where user_id = $1`,
       [notification_claims?.data.owner],
     );
+
+    console.log(fuel_value);
 
     if (user.rowCount === 0) {
       console.log(`no token found for user ${notification_claims?.data.owner}`);
@@ -48,6 +51,7 @@ router.post(
           owner: notification_claims!.data.owner,
           tank_size: notification_claims!.data.tank_size.toString(),
           consumption: notification_claims!.data.consumption.toString(),
+          fuel_value
         },
       }),
     );
@@ -67,6 +71,7 @@ router.post(
           owner: notification_claims!.data.owner,
           tank_size: notification_claims!.data.tank_size.toString(),
           consumption: notification_claims!.data.consumption.toString(),
+          fuel_value: fuel_value
         },
       ],
     );
